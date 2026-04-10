@@ -273,76 +273,108 @@ kill <PID>
 
 ---
 
-## Revisi
-Laporan Revisi Program Daemon Monitoring File
-- Deskripsi Program
+# 📋 Laporan Revisi Program Daemon Monitoring File
 
-Program ini merupakan sebuah daemon berbasis C yang berfungsi untuk:
+## Deskripsi Program
 
-Memantau file contract.txt
-Menjaga isi file agar tidak diubah atau dihapus
-Mengembalikan (restore) isi file jika terjadi perubahan
-Mencatat aktivitas ke dalam file log work.log
+Program ini merupakan daemon berbasis C yang berfungsi untuk:
 
-Program berjalan di background menggunakan mekanisme daemon dan memanfaatkan inotify untuk monitoring file system.
+- Memantau file `contract.txt`
+- Menjaga isi file agar tidak diubah atau dihapus
+- Mengembalikan (restore) isi file jika terjadi perubahan
+- Mencatat aktivitas ke dalam file log `work.log`
 
-- Permasalahan Awal
+Program berjalan di background menggunakan mekanisme daemon dan memanfaatkan **inotify** untuk monitoring file system.
+
+---
+
+## Permasalahan Awal
 
 Pada implementasi sebelumnya, terdapat bug:
 
-Ketika isi file contract.txt diedit (misalnya mengubah kata "unseen"),
-file tidak selalu ter-restore ke kondisi semula
-- Penyebab
+> Ketika isi file `contract.txt` diedit (misalnya mengubah kata *"unseen"*), file tidak selalu ter-restore ke kondisi semula.
 
-Hal ini terjadi karena:
+---
 
-Program hanya menangani event IN_MODIFY
-Banyak text editor (nano, vim, VSCode, dll) tidak langsung menulis ke file asli
-Editor biasanya:
-Menulis ke file sementara
-Mengganti file asli (rename/overwrite)
+## Penyebab
 
-Akibatnya:
+Hal ini terjadi karena program hanya menangani event `IN_MODIFY`.
 
-Event IN_MODIFY saja tidak cukup untuk mendeteksi perubahan final
-- Solusi yang Diterapkan
-1. Menambahkan Event IN_CLOSE_WRITE
+Banyak text editor (nano, vim, VSCode, dll.) **tidak langsung menulis ke file asli**. Editor biasanya:
 
-Event ini akan dipicu ketika file selesai ditulis (write selesai).
+1. Menulis ke file sementara
+2. Mengganti file asli (rename/overwrite)
 
+Akibatnya, event `IN_MODIFY` saja tidak cukup untuk mendeteksi perubahan final.
+
+---
+
+## Solusi yang Diterapkan
+
+### 1. Menambahkan Event `IN_CLOSE_WRITE`
+
+Event ini dipicu ketika file selesai ditulis (*write* selesai).
+
+```c
 int wd = inotify_add_watch(fd, ".", IN_DELETE | IN_MODIFY | IN_CLOSE_WRITE);
-2. Menangani Banyak Event Sekaligus
+```
 
-Fungsi read() bisa mengembalikan beberapa event sekaligus, sehingga perlu loop parsing:
+### 2. Menangani Banyak Event Sekaligus
 
+Fungsi `read()` bisa mengembalikan beberapa event sekaligus, sehingga perlu loop parsing:
+
+```c
 int i = 0;
 while (i < length) {
     struct inotify_event *event = (struct inotify_event *)&buffer[i];
-    
+
     // proses event
-    
+
     i += sizeof(struct inotify_event) + event->len;
 }
-3. Menggabungkan Deteksi Event Perubahan
+```
+
+### 3. Menggabungkan Deteksi Event Perubahan
 
 Perubahan file sekarang dideteksi dengan:
 
+```c
 if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE)) {
     write_log("contract violated.");
     sleep(1);
     create_contract(1);
 }
-4. Menambahkan Delay (sleep)
+```
+
+### 4. Menambahkan Delay (`sleep`)
 
 Digunakan untuk memastikan proses penulisan file oleh editor sudah selesai:
 
+```c
 sleep(1);
-- Alur Kerja Program Setelah Revisi
+```
+
+---
+
+## Alur Kerja Program Setelah Revisi
+
+```
 Program berjalan sebagai daemon
-Membuat file contract.txt jika belum ada
-Setiap 5 detik:
-Menulis log status ke work.log
-Jika terjadi:
-Edit file → langsung di-restore
-Save file → langsung di-restore
-Hapus file → file dibuat ulang
+        │
+        ▼
+Membuat contract.txt jika belum ada
+        │
+        ▼
+┌───────────────────────────┐
+│  Setiap 5 detik:          │
+│  Menulis log ke work.log  │
+└───────────┬───────────────┘
+            │
+     Jika terjadi event:
+            │
+     ┌──────┴───────┐──────────────┐
+     │              │              │
+  Edit file     Save file     Hapus file
+     │              │              │
+  Restore        Restore      Buat ulang
+```
