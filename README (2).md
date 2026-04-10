@@ -1,0 +1,278 @@
+# Laporan Resmi 
+# Praktikum Sistem Operasi
+
+---
+
+## Identitas
+
+| Field | Keterangan |
+|-------|-----------|
+| **Nama** | A.Algifari Rantiga Isdar |
+| **NRP** | 5027251112 |
+| **Kelas** | C |
+
+---
+
+# Soal 1 — Kasbon Warga Kampung Durian Runtuh
+
+## Deskripsi Soal
+
+Program ini dibuat untuk membantu Uncle Muthu dalam mengamankan data hutang pelanggan yang tersimpan dalam file `buku_hutang.csv`. Program berjalan secara **sequential process** menggunakan konsep parent dan child process.
+
+Setiap proses dilakukan secara berurutan dengan memanfaatkan `fork()`, `exec()`, dan `waitpid()`, **tanpa menggunakan `system()`**.
+
+---
+
+## Struktur Folder
+
+```
+soal_1/
+├── buku_hutang.csv
+├── kasir_muthu.c
+├── rahasia_muthu.zip
+└── brankas_kedai/
+    ├── buku_hutang.csv
+    └── daftar_penunggak.txt
+```
+
+---
+
+## Alur Program
+
+Program `kasir_muthu.c` memiliki alur sebagai berikut:
+
+### 1. Membuat Folder Brankas
+
+Parent process membuat child process untuk menjalankan:
+
+```bash
+mkdir brankas_kedai
+```
+
+Folder ini digunakan sebagai tempat penyimpanan data penting.
+
+### 2. Menyalin File CSV
+
+Child process berikutnya menyalin file:
+
+```bash
+cp buku_hutang.csv brankas_kedai/
+```
+
+### 3. Menyaring Data "Belum Lunas"
+
+Program mencari pelanggan dengan status `Belum Lunas` menggunakan:
+
+```bash
+grep "Belum Lunas" brankas_kedai/buku_hutang.csv > brankas_kedai/daftar_penunggak.txt
+```
+
+### 4. Mengompres Brankas
+
+Folder `brankas_kedai` dikompres menjadi:
+
+```bash
+zip -r rahasia_muthu.zip brankas_kedai
+```
+
+---
+
+## Konsep Sequential Process
+
+Setiap langkah dilakukan secara berurutan:
+
+1. Parent membuat child — `fork()`
+2. Child menjalankan perintah — `exec()`
+3. Parent menunggu child selesai — `waitpid()`
+
+Jika suatu proses gagal, program langsung berhenti dan menampilkan pesan error.
+
+---
+
+## Error Handling
+
+Jika terjadi kegagalan pada salah satu proses:
+
+```
+[ERROR] Aiyaa! Proses gagal, file atau folder tidak ditemukan.
+```
+
+Program tidak akan melanjutkan ke langkah berikutnya.
+
+---
+
+## Output Berhasil
+
+Jika semua proses berhasil:
+
+```
+[INFO] Fuhh, selamat! Buku hutang dan daftar penagihan berhasil diamankan.
+```
+
+---
+
+## Contoh Isi Output
+
+`daftar_penunggak.txt` berisi baris-baris dari `buku_hutang.csv` dengan status:
+
+```
+Belum Lunas
+```
+
+---
+
+## Hasil Pengujian
+
+| Fitur | Status |
+|-------|--------|
+| Pembuatan folder `brankas_kedai` | Berhasil |
+| Penyalinan `buku_hutang.csv` | Berhasil |
+| Penyaringan data `Belum Lunas` | Berhasil |
+| Kompresi folder menjadi `.zip` | Berhasil |
+| Error handling saat proses gagal | Berhasil |
+
+---
+
+## Kesimpulan
+
+Program ini berhasil mengimplementasikan **sequential process** menggunakan `fork()`, `exec()`, dan `waitpid()`, mengelola file dan direktori secara otomatis, serta menangani error dengan baik — tanpa menggunakan `system()`.
+
+---
+
+---
+
+# Soal 2 — The World Never Stops, Even When You Feel Tired
+
+## Deskripsi Soal
+
+Program daemon berbasis bahasa C yang berjalan di background untuk mensimulasikan proses yang terus berjalan tanpa henti. Program bertanggung jawab untuk melakukan logging aktivitas secara berkala, menjaga keberadaan file tertentu, serta merespons perubahan pada file tersebut.
+
+---
+
+## Struktur Folder
+
+```
+soal_2/
+├── contract_daemon.c
+├── contract.txt
+└── work.log
+```
+
+---
+
+## Cara Kerja Program
+
+### 1. Daemon Initialization
+
+Program diubah menjadi daemon menggunakan:
+
+- `fork()` — membuat child process
+- `setsid()` — membuat session baru
+- `umask(0)` — mengatur permission
+- `chdir()` — menentukan working directory
+- Menutup file descriptor standar (`stdin`, `stdout`, `stderr`)
+
+### 2. Logging Berkala
+
+Setiap **5 detik**, program menuliskan pesan ke dalam file `work.log` dengan format:
+
+```
+still working... [status]
+```
+
+Status dipilih secara acak dari:
+
+| Status | Keterangan |
+|--------|------------|
+| `[awake]` | Daemon aktif penuh |
+| `[drifting]` | Daemon berjalan pasif |
+| `[numbness]` | Daemon dalam kondisi idle |
+
+### 3. Pembuatan File `contract.txt`
+
+Saat pertama kali dijalankan, program membuat file `contract.txt` dengan isi:
+
+```
+A promise to keep going, even when unseen.
+created at: <timestamp>
+```
+
+> Timestamp diambil dari waktu sistem saat program pertama kali dijalankan.
+
+### 4. Monitoring File dengan `inotify`
+
+Program menggunakan `inotify` untuk memonitor perubahan pada `contract.txt`.
+
+#### a. Jika File Dihapus (`IN_DELETE`)
+
+- Program mendeteksi event penghapusan
+- File dibuat kembali dalam waktu **1–2 detik**
+- Isi file yang di-restore:
+
+```
+A promise to keep going, even when unseen.
+restored at: <timestamp>
+```
+
+#### b. Jika File Diubah (`IN_MODIFY`)
+
+- Program mendeteksi event modifikasi
+- Pesan berikut ditulis ke `work.log`:
+
+```
+contract violated.
+```
+
+- File di-restore ke format awal (menggunakan `restored at`)
+
+### 5. Signal Handling
+
+Program menangani sinyal terminasi `SIGTERM` dan `SIGINT`.
+
+Saat daemon dihentikan, program menuliskan pesan berikut ke `work.log` sebelum berhenti:
+
+```
+We really weren't meant to be together
+```
+
+---
+
+## Cara Menjalankan Program
+
+### Compile Program
+
+```bash
+gcc contract_daemon.c -o contract_daemon
+```
+
+### Jalankan Daemon
+
+```bash
+./contract_daemon
+```
+
+### Hentikan Daemon
+
+```bash
+ps aux | grep contract_daemon
+kill <PID>
+```
+
+---
+
+## Hasil Pengujian
+
+| Fitur | Status |
+|-------|--------|
+| Berjalan sebagai daemon | Berhasil |
+| Logging setiap 5 detik | Berhasil |
+| Pembuatan `contract.txt` otomatis | Berhasil |
+| Restore file saat dihapus | Berhasil |
+| Deteksi dan penanganan perubahan file | Berhasil |
+| Pesan akhir saat daemon dihentikan | Berhasil |
+
+---
+
+## Kesimpulan
+
+Program berhasil mengimplementasikan konsep **daemon process**, **file monitoring** menggunakan `inotify`, serta **signal handling** dengan baik. Semua requirement pada soal telah terpenuhi sesuai dengan spesifikasi yang diberikan.
