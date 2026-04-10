@@ -356,25 +356,3 @@ sleep(1);
 
 ---
 
-## Alur Kerja Program Setelah Revisi
-
-```
-Program berjalan sebagai daemon
-        │
-        ▼
-Membuat contract.txt jika belum ada
-        │
-        ▼
-┌───────────────────────────┐
-│  Setiap 5 detik:          │
-│  Menulis log ke work.log  │
-└───────────┬───────────────┘
-            │
-     Jika terjadi event:
-            │
-     ┌──────┴───────┐──────────────┐
-     │              │              │
-  Edit file     Save file     Hapus file
-     │              │              │
-  Restore        Restore      Buat ulang
-```
