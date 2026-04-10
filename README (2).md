@@ -273,6 +273,76 @@ kill <PID>
 
 ---
 
-## Kesimpulan
+## Revisi
+Laporan Revisi Program Daemon Monitoring File
+- Deskripsi Program
 
-Program berhasil mengimplementasikan konsep **daemon process**, **file monitoring** menggunakan `inotify`, serta **signal handling** dengan baik. Semua requirement pada soal telah terpenuhi sesuai dengan spesifikasi yang diberikan.
+Program ini merupakan sebuah daemon berbasis C yang berfungsi untuk:
+
+Memantau file contract.txt
+Menjaga isi file agar tidak diubah atau dihapus
+Mengembalikan (restore) isi file jika terjadi perubahan
+Mencatat aktivitas ke dalam file log work.log
+
+Program berjalan di background menggunakan mekanisme daemon dan memanfaatkan inotify untuk monitoring file system.
+
+- Permasalahan Awal
+
+Pada implementasi sebelumnya, terdapat bug:
+
+Ketika isi file contract.txt diedit (misalnya mengubah kata "unseen"),
+file tidak selalu ter-restore ke kondisi semula
+- Penyebab
+
+Hal ini terjadi karena:
+
+Program hanya menangani event IN_MODIFY
+Banyak text editor (nano, vim, VSCode, dll) tidak langsung menulis ke file asli
+Editor biasanya:
+Menulis ke file sementara
+Mengganti file asli (rename/overwrite)
+
+Akibatnya:
+
+Event IN_MODIFY saja tidak cukup untuk mendeteksi perubahan final
+- Solusi yang Diterapkan
+1. Menambahkan Event IN_CLOSE_WRITE
+
+Event ini akan dipicu ketika file selesai ditulis (write selesai).
+
+int wd = inotify_add_watch(fd, ".", IN_DELETE | IN_MODIFY | IN_CLOSE_WRITE);
+2. Menangani Banyak Event Sekaligus
+
+Fungsi read() bisa mengembalikan beberapa event sekaligus, sehingga perlu loop parsing:
+
+int i = 0;
+while (i < length) {
+    struct inotify_event *event = (struct inotify_event *)&buffer[i];
+    
+    // proses event
+    
+    i += sizeof(struct inotify_event) + event->len;
+}
+3. Menggabungkan Deteksi Event Perubahan
+
+Perubahan file sekarang dideteksi dengan:
+
+if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE)) {
+    write_log("contract violated.");
+    sleep(1);
+    create_contract(1);
+}
+4. Menambahkan Delay (sleep)
+
+Digunakan untuk memastikan proses penulisan file oleh editor sudah selesai:
+
+sleep(1);
+- Alur Kerja Program Setelah Revisi
+Program berjalan sebagai daemon
+Membuat file contract.txt jika belum ada
+Setiap 5 detik:
+Menulis log status ke work.log
+Jika terjadi:
+Edit file → langsung di-restore
+Save file → langsung di-restore
+Hapus file → file dibuat ulang
