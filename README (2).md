@@ -272,8 +272,12 @@ kill <PID>
 | Pesan akhir saat daemon dihentikan | Berhasil |
 
 ---
+## Kesimpulan
 
-# 📋 Laporan Revisi Program Daemon Monitoring File
+Program berhasil mengimplementasikan konsep **daemon process**, **file monitoring** menggunakan `inotify`, serta **signal handling** dengan baik. Semua requirement pada soal telah terpenuhi sesuai dengan spesifikasi yang diberikan
+
+---
+#  Laporan Revisi Program Daemon Monitoring File
 
 ## Deskripsi Program
 
