@@ -543,11 +543,3 @@ Berikut tampilan isi `ethereal.log` **sebelum** daemon dihentikan — terlihat l
 Setelah menjalankan `./angel -kill`, daemon berhasil dihentikan dengan output **"Daemon dihentikan"**. Pengecekan `cat ethereal.log | tail -2` menampilkan dua baris terakhir log yang membuktikan proses kill juga tercatat:
 
 <img width="1912" height="207" alt="soal3 7" src="https://github.com/user-attachments/assets/2bed3f65-a77b-43d6-8915-4cfe2125b053" />
-
-## File yang Dihasilkan
-
-| File | Keterangan |
-|------|------------|
-| `angel.c` | Source code utama program |
-| `LoveLetter.txt` | File yang berisi kalimat terenkripsi (Base64) |
-| `ethereal.log` | File log aktivitas program |
