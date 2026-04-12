@@ -526,6 +526,14 @@ Demonstrasi decrypt ketiga menghasilkan kalimat berbeda lagi: **`aku mencintaimu
 
 ---
 
+### soal3_6b — Decrypt: Menghasilkan Kalimat Keempat (Acak)
+
+![soal3_6b](soal3_6b.png)
+
+Demonstrasi decrypt lanjutan menghasilkan kalimat keempat: **`kalau aku dilahirkan kembali, aku tetap akan terus menyayangimu`** — melengkapi bukti bahwa keempat kalimat dari daftar dapat muncul secara acak.
+
+---
+
 ### soal3_7 — Menghentikan Daemon dan Isi `ethereal.log`
 
 ![soal3_7](soal3_7.png)
@@ -546,4 +554,3 @@ Membuktikan bahwa seluruh aktivitas program — termasuk proses kill — berhasi
 | `angel.c` | Source code utama program |
 | `LoveLetter.txt` | File yang berisi kalimat terenkripsi (Base64) |
 | `ethereal.log` | File log aktivitas program |
-
