@@ -359,4 +359,191 @@ sleep(1);
 ```
 
 ---
+# Soal 3 — One Letter for Destiny
+
+## Deskripsi Soal
+
+Program `angel.c` adalah program berbasis **daemon** di Linux yang secara otomatis berjalan di background. Setelah dijalankan sebagai daemon, nama proses yang tampil di sistem (via `ps aux`) harus berubah menjadi **`maya`**.
+
+---
+
+## Yang Harus Dibuat
+
+### Program: `angel.c`
+
+Program ini memiliki beberapa fitur dan command yang dapat dijalankan melalui argumen.
+
+---
+
+## Fitur & Command
+
+### 1. `-daemon` — Jalankan sebagai Daemon
+```bash
+./angel -daemon
+```
+- Menjalankan program sebagai **background daemon**.
+- Nama proses yang tampil di `ps aux` harus berubah menjadi **`maya`**.
+- Setelah berjalan, dua fitur utama berjalan secara otomatis dan terus-menerus selama daemon hidup.
+
+---
+
+### 2. Fitur `secret` — Generate LoveLetter *(otomatis di dalam daemon)*
+
+- Membuat file **`LoveLetter.txt`** di direktori saat ini.
+- Setiap **10 detik**, isi file diganti dengan **satu kalimat acak** dari daftar berikut:
+  1. `aku akan fokus pada diriku sendiri`
+  2. `aku mencintaimu dari sekarang hingga selamanya`
+  3. `aku akan menjauh darimu, hingga takdir mempertemukan kita di versi kita yang terbaik.`
+  4. `kalau aku dilahirkan kembali, aku tetap akan terus menyayangimu`
+
+---
+
+### 3. Fitur `surprise` — Enkripsi LoveLetter *(otomatis di dalam daemon)*
+
+- Berjalan **otomatis** setelah fitur `secret` memperbarui file.
+- Mengenkripsi isi `LoveLetter.txt` menggunakan metode **Base64**.
+- Fitur ini **tidak** dipanggil secara manual; berjalan sendiri di dalam daemon.
+
+---
+
+### 4. `-decrypt` — Dekripsi LoveLetter *(manual)*
+```bash
+./angel -decrypt
+```
+- Mengembalikan isi `LoveLetter.txt` yang sudah dienkripsi ke **bentuk aslinya** (plaintext).
+- Hanya berjalan jika **dipanggil eksplisit** melalui argumen.
+- Terdapat **error handling** jika file `LoveLetter.txt` tidak ditemukan.
+
+---
+
+### 5. `-kill` — Hentikan Daemon *(manual)*
+```bash
+./angel -kill
+```
+- Menghentikan proses daemon yang sedang berjalan.
+- Hanya berjalan jika **dipanggil eksplisit** melalui argumen.
+- Terdapat **error handling** jika daemon ternyata belum berjalan.
+
+---
+
+## Logging
+
+Semua aktivitas program dicatat ke dalam file **`ethereal.log`**.
+
+**Proses yang dicatat:** `secret`, `surprise`, `decrypt`, `kill`
+
+**Format log:**
+```
+[dd:mm:yyyy]-[hh:mm:ss]_nama-proses_STATUS
+```
+
+**Status yang digunakan:**
+
+| Status | Keterangan |
+|--------|------------|
+| `RUNNING` | Saat proses mulai dijalankan |
+| `SUCCESS` | Saat proses berhasil diselesaikan |
+| `ERROR` | Saat terjadi kegagalan dalam proses |
+
+**Contoh isi log:**
+```
+[12:04:2025]-[10:30:00]_secret_RUNNING
+[12:04:2025]-[10:30:00]_secret_SUCCESS
+[12:04:2025]-[10:30:00]_surprise_RUNNING
+[12:04:2025]-[10:30:00]_surprise_SUCCESS
+[12:04:2025]-[10:30:05]_decrypt_RUNNING
+[12:04:2025]-[10:30:05]_decrypt_ERROR
+```
+
+---
+
+## Ringkasan Alur Program
+
+```
+./angel -daemon
+    │
+    ├─► Daemonize → nama proses berubah menjadi "maya"
+    │
+    ├─► [Loop setiap 10 detik]
+    │       ├─► secret  : tulis kalimat acak ke LoveLetter.txt
+    │       └─► surprise: enkripsi LoveLetter.txt dengan Base64
+    │
+    └─► [Berjalan terus sampai di-kill]
+
+./angel -decrypt  → decode Base64 → tampilkan isi asli LoveLetter.txt
+./angel -kill     → kirim sinyal stop ke daemon
+```
+
+---
+
+## Demonstrasi
+
+### soal3_1 — Kondisi Awal: Hanya ada `angel.c`
+
+![soal3_1](soal3_1.png)
+
+Kondisi awal direktori hanya berisi satu file yaitu `angel.c`. File `LoveLetter.txt` dan `ethereal.log` belum ada karena daemon belum dijalankan.
+
+---
+
+### soal3_2 — Kompilasi, Help Menu, dan Menjalankan Daemon
+
+![soal3_2](soal3_2.png)
+
+Proses kompilasi dengan `gcc angel.c -o angel`, lalu menjalankan `./angel` tanpa argumen yang menampilkan **help menu** berisi daftar command yang tersedia. Setelah itu daemon dijalankan dengan `./angel -daemon` dan dicek via `ps aux` — terlihat proses dengan nama **`maya`** berhasil muncul (PID 4187).
+
+---
+
+### soal3_3 — Isi `LoveLetter.txt` Berupa Base64 (Terenkripsi)
+
+![soal3_3](soal3_3.png)
+
+Saat daemon berjalan, perintah `cat LoveLetter.txt` menampilkan isi file dalam bentuk **string Base64** (terenkripsi). Ini adalah hasil kerja fitur `surprise` yang otomatis mengenkripsi setiap kalimat yang ditulis oleh fitur `secret`.
+
+---
+
+### soal3_4 — Decrypt: Menghasilkan Kalimat Pertama
+
+![soal3_4](soal3_4.png)
+
+Menjalankan `./angel -decrypt` berhasil mendekripsi `LoveLetter.txt`. Output menampilkan pesan **"Berhasil decrypt"** dan isi file kembali ke plaintext: **`aku akan fokus pada diriku sendiri`**.
+
+---
+
+### soal3_5 — Decrypt: Menghasilkan Kalimat Lain (Acak)
+
+![soal3_5](soal3_5.png)
+
+Demonstrasi decrypt kedua menunjukkan kalimat berbeda: **`aku akan menjauh darimu, hingga takdir mempertemukan kita di versi kita yang terbaik.`** — membuktikan bahwa pemilihan kalimat bersifat **acak** setiap 10 detik.
+
+---
+
+### soal3_6 — Decrypt: Menghasilkan Kalimat Lain (Acak)
+
+![soal3_6](soal3_6.png)
+
+Demonstrasi decrypt ketiga menghasilkan kalimat berbeda lagi: **`aku mencintaimu dari sekarang hingga selamanya`** — kembali membuktikan keacakan pemilihan kalimat oleh fitur `secret`.
+
+---
+
+### soal3_7 — Menghentikan Daemon dan Isi `ethereal.log`
+
+![soal3_7](soal3_7.png)
+
+Perintah `./angel -kill` berhasil menghentikan daemon dengan output **"Daemon dihentikan"**. Pengecekan `cat ethereal.log | tail -2` menampilkan dua baris terakhir log:
+```
+[12:04:2026]-[06:54:14]_kill_RUNNING
+[12:04:2026]-[06:54:14]_kill_SUCCESS
+```
+Membuktikan bahwa seluruh aktivitas program — termasuk proses kill — berhasil dicatat ke `ethereal.log`.
+
+---
+
+## File yang Dihasilkan
+
+| File | Keterangan |
+|------|------------|
+| `angel.c` | Source code utama program |
+| `LoveLetter.txt` | File yang berisi kalimat terenkripsi (Base64) |
+| `ethereal.log` | File log aktivitas program |
 
