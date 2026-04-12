@@ -478,49 +478,49 @@ Semua aktivitas program dicatat ke dalam file **`ethereal.log`**.
 
 ## Demonstrasi
 
-### soal3_1 — Kondisi Awal: Hanya ada `angel.c`
+### Kondisi Awal: Hanya ada `angel.c`
 
-![soal3_1](soal3_1.png)
+<img width="1195" height="451" alt="soal3 1" src="https://github.com/user-attachments/assets/e979145a-9036-4459-9cfd-535f1b6bb215" />
 
 Kondisi awal direktori hanya berisi satu file yaitu `angel.c`. File `LoveLetter.txt` dan `ethereal.log` belum ada karena daemon belum dijalankan.
 
 ---
 
-### soal3_2 — Kompilasi, Help Menu, dan Menjalankan Daemon
+### Kompilasi, Help Menu, dan Menjalankan Daemon
 
-![soal3_2](soal3_2.png)
+<img width="1918" height="1070" alt="soal3 2" src="https://github.com/user-attachments/assets/4201f3e9-2995-47fc-97e3-e30a5828f0ef" />
 
 Proses kompilasi dengan `gcc angel.c -o angel`, lalu menjalankan `./angel` tanpa argumen yang menampilkan **help menu** berisi daftar command yang tersedia. Setelah itu daemon dijalankan dengan `./angel -daemon` dan dicek via `ps aux` — terlihat proses dengan nama **`maya`** berhasil muncul (PID 4187).
 
 ---
 
-### soal3_3 — Isi `LoveLetter.txt` Berupa Base64 (Terenkripsi)
+### Isi `LoveLetter.txt` Berupa Base64 (Terenkripsi)
 
-![soal3_3](soal3_3.png)
+<img width="1915" height="169" alt="image" src="https://github.com/user-attachments/assets/aa686841-9008-41ee-b666-f1f97f31df0f" />
 
 Saat daemon berjalan, perintah `cat LoveLetter.txt` menampilkan isi file dalam bentuk **string Base64** (terenkripsi). Ini adalah hasil kerja fitur `surprise` yang otomatis mengenkripsi setiap kalimat yang ditulis oleh fitur `secret`.
 
 ---
 
-### soal3_4 — Decrypt: Menghasilkan Kalimat Pertama
+### Decrypt: Menghasilkan Kalimat Pertama
 
-![soal3_4](soal3_4.png)
+<img width="1727" height="203" alt="soal3 4" src="https://github.com/user-attachments/assets/946f6173-5896-485d-8642-869970ad341d" />
 
 Menjalankan `./angel -decrypt` berhasil mendekripsi `LoveLetter.txt`. Output menampilkan pesan **"Berhasil decrypt"** dan isi file kembali ke plaintext: **`aku akan fokus pada diriku sendiri`**.
 
 ---
 
-### soal3_5 — Decrypt: Menghasilkan Kalimat Lain (Acak)
+### Decrypt: Menghasilkan Kalimat Lain (Acak)
 
-![soal3_5](soal3_5.png)
+<img width="1902" height="211" alt="soal3 3" src="https://github.com/user-attachments/assets/ab155e0a-9cdd-410c-ac29-d8d540963a08" />
 
 Demonstrasi decrypt kedua menunjukkan kalimat berbeda: **`aku akan menjauh darimu, hingga takdir mempertemukan kita di versi kita yang terbaik.`** — membuktikan bahwa pemilihan kalimat bersifat **acak** setiap 10 detik.
 
 ---
 
-### soal3_6 — Decrypt: Menghasilkan Kalimat Lain (Acak)
+### Decrypt: Menghasilkan Kalimat Lain (Acak)
 
-![soal3_6](soal3_6.png)
+<img width="1917" height="246" alt="soal3 5" src="https://github.com/user-attachments/assets/6d80f4d9-de94-4a56-b4f3-e9f7f1b65921" />
 
 Demonstrasi decrypt ketiga menghasilkan kalimat berbeda lagi: **`aku mencintaimu dari sekarang hingga selamanya`** — kembali membuktikan keacakan pemilihan kalimat oleh fitur `secret`.
 
@@ -528,24 +528,21 @@ Demonstrasi decrypt ketiga menghasilkan kalimat berbeda lagi: **`aku mencintaimu
 
 ### soal3_6b — Decrypt: Menghasilkan Kalimat Keempat (Acak)
 
-![soal3_6b](soal3_6b.png)
+<img width="1895" height="242" alt="image" src="https://github.com/user-attachments/assets/1d959f4f-732b-46a5-aa82-68c65f3043cb" />
 
 Demonstrasi decrypt lanjutan menghasilkan kalimat keempat: **`kalau aku dilahirkan kembali, aku tetap akan terus menyayangimu`** — melengkapi bukti bahwa keempat kalimat dari daftar dapat muncul secara acak.
 
 ---
 
-### soal3_7 — Menghentikan Daemon dan Isi `ethereal.log`
+### Isi dari "ethereal.log" sesudah dan sebelum di kill
 
-![soal3_7](soal3_7.png)
+Berikut tampilan isi `ethereal.log` **sebelum** daemon dihentikan — terlihat log dari fitur `secret` dan `surprise` yang terus berjalan setiap 10 detik, serta satu entri `decrypt` di tengahnya:
 
-Perintah `./angel -kill` berhasil menghentikan daemon dengan output **"Daemon dihentikan"**. Pengecekan `cat ethereal.log | tail -2` menampilkan dua baris terakhir log:
-```
-[12:04:2026]-[06:54:14]_kill_RUNNING
-[12:04:2026]-[06:54:14]_kill_SUCCESS
-```
-Membuktikan bahwa seluruh aktivitas program — termasuk proses kill — berhasil dicatat ke `ethereal.log`.
+<img width="1917" height="1066" alt="soal3 6" src="https://github.com/user-attachments/assets/e6785976-41a0-48f2-8f3e-ebd94292ff5e" />
 
----
+Setelah menjalankan `./angel -kill`, daemon berhasil dihentikan dengan output **"Daemon dihentikan"**. Pengecekan `cat ethereal.log | tail -2` menampilkan dua baris terakhir log yang membuktikan proses kill juga tercatat:
+
+<img width="1912" height="207" alt="soal3 7" src="https://github.com/user-attachments/assets/2bed3f65-a77b-43d6-8915-4cfe2125b053" />
 
 ## File yang Dihasilkan
 
